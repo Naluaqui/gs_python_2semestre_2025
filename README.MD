@@ -106,7 +106,7 @@ with open("ARQUIVO_JSON_AQUI.json", "w", encoding="utf-8") as f:
 
 1. **Instale as dependências:**
 
-   ```bash
+ ```bash
    pip install requests
 ```
 
