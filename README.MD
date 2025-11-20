@@ -69,9 +69,6 @@ Principais arquivos do repositório:
 - `main.py`  
   Script principal interativo (menu com opções para exibir dados e fazer cálculos).
 
-- `function.py`  
-  Conjunto de funções auxiliares para carregar JSON, traduzir países, calcular estatísticas e indicadores derivados.
-
 - `nomes_paises_pt.py`  
   Dicionário/mapeamento de nomes de países em português → inglês, usado pela função `tradutor()`.
 
