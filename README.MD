@@ -7,141 +7,164 @@
 
 ---
 
-## Descrição
+## Contexto
 
-Este projeto realiza a extração de indicadores socioeconômicos fornecidos pela **API do World Bank Group (WBG)**, um organismo internacional composto por instituições financeiras e agências de desenvolvimento que apoiam países de baixa e média renda na promoção do crescimento econômico e redução da pobreza.
+Este repositório faz parte do projeto de Graduação em Engenharia de Software (2º semestre de 2025), com foco em análise de indicadores de trabalho, renda e produtividade a partir de dados do **World Bank Group (WBG)**.
 
-A partir da API, são obtidos dados **padronizados por país e ano**, permitindo análises comparativas entre diferentes regiões do mundo.
+O objetivo é:
+
+- extrair indicadores socioeconômicos padronizados por país e ano;
+- organizar esses dados em arquivos JSON;
+- permitir cálculos estatísticos simples (média, variância, média ponderada);
+- criar um indicador derivado de **produtividade média do trabalhador** e relacioná-lo com a **desigualdade de renda**.
+
+---
+
+## Descrição do projeto
+
+O projeto utiliza a **API do World Bank Group (WBG)**, organismo internacional que apoia países de baixa e média renda na promoção do crescimento econômico e na redução da pobreza.
+
+A partir da API, são obtidos dados:
+
+- **padronizados por país (código ISO3)**  
+- **organizados por ano**
+
+Isso permite análises comparativas entre diferentes países e períodos.
 
 - Site oficial do WBG:  
   <https://www.worldbank.org/ext/en/home>
 
 ---
 
-## Como o script funciona
+## Indicadores utilizados
 
-1. Define o **indicador** desejado (por exemplo, PIB, população, emprego em agricultura etc.).
-2. Faz requisições paginadas à API do World Bank para **todos os países**.
-3. Para cada registro, extrai:
-   - Código do país (ISO3)  
-   - Nome do país  
-   - Ano  
-   - Valor do indicador
-4. Organiza os dados em um dicionário Python no formato:
+Os principais indicadores extraídos e utilizados são:
 
-   ```json
-   {
-     "BRA": {
-       "country": "Brazil",
-       "values": {
-         "2023": 12345.67,
-         "2022": 12000.00
-       }
-     },
-     "ARG": {
-       "country": "Argentina",
-       "values": {
-         "2023": 9876.54
-       }
-     }
-   }
+- **Desigualdade de renda**  (`SI.POV.GINI`) 
+  Medida de concentração de renda no país (ex.: índice de Gini ou indicador equivalente).
 
-5.Salva o resultado em um arquivo **JSON** com codificação **UTF-8**.
+- **Trabalho em Agricultura (%)**  (`SL.AGR.EMPL.ZS`) 
+  Proporção da força de trabalho empregada na agricultura.
 
-### Código utilizado
+- **Trabalho em Indústria (%)**  (`SL.IND.EMPL.ZS`) 
+  Proporção da força de trabalho empregada na indústria.
 
-```python
-import requests
-import json
+- **Trabalho Total em Serviços (%)**  (`SL.SRV.EMPL.ZS`) 
+  Proporção da força de trabalho empregada em serviços.
 
-INDICATOR = "INDICADOR AQUI"
-BASE_URL = f"https://api.worldbank.org/v2/country/all/indicator/{INDICATOR}"
+- **PIB (US$ corrente)** (`NY.GDP.MKTP.CD`)  
+  Tamanho da economia em dólares correntes.
 
-params = {
-    "format": "json",
-    "per_page": 20000,
-    "page": 1,
-}
+- **População total** (`SP.POP.TOTL`)  
+  Número total de habitantes.
 
-resp = requests.get(BASE_URL, params=params)
-resp.raise_for_status()
-data = resp.json()
+Esses indicadores são combinados para estudar estrutura do mercado de trabalho, tamanho da economia e desigualdade de renda.
 
-meta = data[0]
-total_pages = meta["pages"]
+---
 
-gdp_dict = {}
+## Estrutura do projeto
 
-for page in range(1, total_pages + 1):
-    params["page"] = page
-    resp = requests.get(BASE_URL, params=params)
-    resp.raise_for_status()
-    data = resp.json()
+Principais arquivos do repositório:
 
-    registros = data[1]
+- `main.py`  
+  Script principal interativo (menu com opções para exibir dados e fazer cálculos).
 
-    for item in registros:
-        iso3 = item.get("countryiso3code")
-        if not iso3:
-            continue
+- `function.py`  
+  Conjunto de funções auxiliares para carregar JSON, traduzir países, calcular estatísticas e indicadores derivados.
 
-        country_name = item["country"]["value"]
-        year = int(item["date"])
-        value = item["value"]
+- `nomes_paises_pt.py`  
+  Dicionário/mapeamento de nomes de países em português → inglês, usado pela função `tradutor()`.
 
-        if iso3 not in gdp_dict:
-            gdp_dict[iso3] = {
-                "country": country_name,
-                "values": {}
-            }
+- `dicionario_PIB.json`  
+  Dados de PIB por país e ano.
 
-        if value is not None:
-            gdp_dict[iso3]["values"][year] = value
+- `dicionario_População.json`  
+  Dados de população total por país e ano.
 
-with open("ARQUIVO_JSON_AQUI.json", "w", encoding="utf-8") as f:
-    json.dump(gdp_dict, f, ensure_ascii=False, indent=2)
-```
+- `dicionario_Trabalho_Total.json`  
+  Percentual da população ocupada em serviços.
 
-## Como usar
+- `dicionario_Trabalho_Agricultura.json`  
+  Percentual da população ocupada em agricultura.
 
-1. **Instale as dependências:**
+- `dicionario_Trabalho_Industria.json`  
+  Percentual da população ocupada em indústria.
 
- ```bash
-   pip install requests
-```
+- `dicionario_DESIGUALDADE_RENDA.json`  
+  Indicador de desigualdade de renda por país e ano.
 
-2.Escolha o indicador do World Bank e substitua em:
+> Os nomes exatos dos arquivos podem variar levemente, mas seguem esse padrão.
 
-```python
-INDICATOR = "INDICADOR AQUI"
-```
+---
 
-**Exemplos de indicadores:**
+## Requisitos
 
-- PIB (US$ corrente): `NY.GDP.MKTP.CD`
-- População total: `SP.POP.TOTL`
-- Emprego na agricultura (%): `SL.AGR.EMPL.ZS`
+- **Python** instalado na máquina.
 
-3.Defina o nome do arquivo de saída:
+---
 
-```python
-with open("ARQUIVO_JSON_AQUI.json", "w", encoding="utf-8") as f:
-...
+## Como executar
 
-4.Execute o script:
+### 1. Clonar o repositório
 
 ```bash
-python nome_do_arquivo.py
+git clone https://github.com/Naluaqui/gs_python_2semestre_2025.git
 ```
 
-5.O arquivo **JSON** gerado poderá ser utilizado nas análises do trabalho, por exemplo para:
+### 2. Acessar a pasta do projeto
 
-- cálculo de médias;
-- cálculo de variâncias;
-- estimativa de produtividade média do trabalhador;
-- comparação de indicadores entre países e ao longo do tempo.
+```bash
+cd gs_python_2semestre_2025
+```
 
-Esses dados servem como base para diferentes explorações estatísticas e visualizações no contexto do projeto.
+### 3. Executar o script principal
+
+```bash
+python main.py
+```
+
+O programa será iniciado no terminal e você poderá interagir com as opções disponíveis.
+
+---
+
+## Funcionalidades do programa
+
+Ao executar `python main.py`, o menu oferece as seguintes opções:
+
+### 1. Apresentar dados
+Exibe o conteúdo bruto de um indicador (arquivo JSON escolhido pelo usuário).
+
+### 2. Apresentar país
+Mostra, em formato de dicionário, todos os indicadores disponíveis para um determinado país, usando a função `tradutor()` para mapear o nome do país em português para inglês.
+
+### 3. Calcular média de dado
+Calcula a média temporal de um indicador para um país (por exemplo, PIB médio ou percentual médio de trabalho em agricultura).
+
+### 4. Calcular variância de dado
+Retorna a variância dos valores do indicador ao longo dos anos para um país específico.
+
+### 5. Calcular média ponderada de dado
+Calcula uma média ponderada de um indicador usando outro como peso (por exemplo, ponderar um indicador pela população ou pelo PIB).
+
+### 6. Produtividade média do trabalhador × Desigualdade de renda
+
+Esta opção:
+
+1. **Estima o número de trabalhadores:**
+
+   ```text
+   Trabalhadores ≈ População × (Trabalho Total (%) / 100)
+   ```
+
+2. **Calcula a produtividade média do trabalhador:**
+
+  ```text
+  Produtividade = PIB / Trabalhadores
+  ```
 
 
+3. **Relaciona esse valor de produtividade com o indicador de Desigualdade de renda para os mesmos anos, permitindo comparar nível de produtividade e nível de desigualdade ao longo do tempo.**
 
+  ```text
+  ::contentReference[oaicite:0]{index=0}
+  ```
